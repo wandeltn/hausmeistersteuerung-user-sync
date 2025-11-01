@@ -1,12 +1,8 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
-import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
-
-const viteLogger = createLogger();
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -20,6 +16,20 @@ export function log(message: string, source = "express") {
 }
 
 export async function setupVite(app: Express, server: Server) {
+  // Lazy-import Vite and the Vite config to avoid referencing dev-only
+  // dependencies in the production bundle. Bundlers that see a top-level
+  // `import "vite"` will leave it as an external import which then
+  // requires `vite` at runtime (causing the Docker production image to fail
+  // when devDependencies are not installed).
+  const { createServer: createViteServer, createLogger } = await import("vite");
+  // IMPORTANT: do not import the project's vite.config here. The project's
+  // config often references PostCSS / Vite plugins (devDependencies) which
+  // may include native binaries (e.g. lightningcss) or other packages not
+  // present in a production runtime. We pass a minimal inline config to
+  // createViteServer to keep the dev-only setup isolated.
+
+  const viteLogger = createLogger();
+
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
@@ -27,7 +37,8 @@ export async function setupVite(app: Express, server: Server) {
   };
 
   const vite = await createViteServer({
-    ...viteConfig,
+    // minimal config for middleware mode — avoid loading the project's
+    // dev-only plugins here.
     configFile: false,
     customLogger: {
       ...viteLogger,
