@@ -29,7 +29,7 @@ export interface IStorage {
   getGroupMembers(classGroupId: string): Promise<ClassGroupMember[]>;
   addGroupMember(member: InsertClassGroupMember): Promise<ClassGroupMember>;
   addGroupMembers(members: InsertClassGroupMember[]): Promise<void>;
-  removeGroupMember(id: string): Promise<void>;
+  removeGroupMember(id: string, groupId: string): Promise<void>;
 
   // User Exclusions
   getUserExclusions(): Promise<UserExclusion[]>;
@@ -55,7 +55,7 @@ export class DatabaseStorage implements IStorage {
     const groups = await db.select().from(classGroups);
     
     const groupsWithMembers = await Promise.all(
-      groups.map(async (group) => {
+      groups.map(async (group: any) => {
         const members = await db
           .select()
           .from(classGroupMembers)
@@ -64,7 +64,7 @@ export class DatabaseStorage implements IStorage {
         return {
           ...group,
           memberCount: members.length,
-          members: members.map(m => ({ authentikUserId: m.authentikUserId })),
+          members: members.map((m: any) => ({ authentikUserId: m.authentikUserId })),
         };
       })
     );
@@ -111,8 +111,13 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async removeGroupMember(id: string): Promise<void> {
-    await db.delete(classGroupMembers).where(eq(classGroupMembers.id, id));
+  async removeGroupMember(id: string, groupId: string): Promise<void> {
+    await db.delete(classGroupMembers).where(
+      and(
+        eq(classGroupMembers.id, id),
+        eq(classGroupMembers.classGroupId, groupId)
+      )
+    );
   }
 
   // User Exclusions

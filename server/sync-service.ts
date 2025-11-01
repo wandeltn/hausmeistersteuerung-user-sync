@@ -156,11 +156,16 @@ async function syncAccessForCurrentTime() {
     console.log(`Sync completed at ${now.toLocaleTimeString()}`);
   } catch (error) {
     console.error("Error during sync:", error);
-    await storage.createSyncLog({
-      action: "error",
-      details: `Sync error: ${error instanceof Error ? error.message : String(error)}`,
-      success: false,
-    });
+    try {
+      await storage.createSyncLog({
+        action: "error",
+        details: `Sync error: ${error instanceof Error ? error.message : String(error)}`,
+        success: false,
+      });
+    } catch (logErr) {
+      // If writing to the database fails (e.g. DB is down), log locally and continue.
+      console.error("Failed to write sync log to DB:", logErr);
+    }
   }
 }
 

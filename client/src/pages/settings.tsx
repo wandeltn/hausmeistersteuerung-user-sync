@@ -109,7 +109,7 @@ export default function Settings() {
             <div>
               <p className="font-medium text-foreground">Connected</p>
               <p className="text-sm text-muted-foreground">
-                {process.env.AUTHENTIK_API_URL || "API URL configured"}
+                {"API URL configured"}
               </p>
             </div>
             <Badge variant="default" className="ml-auto">Active</Badge>

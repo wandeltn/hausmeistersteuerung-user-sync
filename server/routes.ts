@@ -193,6 +193,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Remove group member
+  app.delete("/api/groups/:groupId/members/:userId", async (req, res) => {
+    try {
+      const { groupId, userId } = req.params;
+      await storage.removeGroupMember(groupId, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing group member:", error);
+      res.status(500).json({ error: "Failed to remove group member" });
+    }
+  });
+
   // User Exclusions
   app.get("/api/exclusions", async (req, res) => {
     try {
