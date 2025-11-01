@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type ClassGroup, type AuthentikUser, LESSON_BLOCKS, DAYS_OF_WEEK } from "@shared/schema";
 import { Plus, FolderKanban, Users, Trash2, Edit, Calendar, X, RemoveFormatting } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -256,6 +256,35 @@ export default function Groups() {
     !selectedGroup?.members.some(m => m.authentikUserId === String(s.pk))
   ) || [];
 
+  // Search / filter for available students. Supports plain substring match and
+  // a simple fuzzy regex (characters in order) for similarity.
+  const [studentSearch, setStudentSearch] = useState("");
+
+  const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  const filteredAvailableStudents = useMemo(() => {
+    const q = studentSearch.trim();
+    if (!q) return availableStudents;
+
+    const lowerQ = q.toLowerCase();
+
+    // Build a fuzzy regex: characters in order, e.g. 'jon' -> /j.*o.*n/i
+    const fuzzy = new RegExp(q.split("").map(escapeRegExp).join(".*"), "i");
+
+    return availableStudents.filter((s) => {
+      const name = (s.name || "" ).toLowerCase();
+      const username = (s.username || "").toLowerCase();
+
+      // Plain substring match
+      if (name.includes(lowerQ) || username.includes(lowerQ)) return true;
+
+      // Fuzzy regex similarity
+      if (fuzzy.test(s.name || "") || fuzzy.test(s.username || "")) return true;
+
+      return false;
+    });
+  }, [availableStudents, studentSearch]);
+
   return (
     <div className="space-y-6" data-testid="page-groups">
       <div className="flex items-center justify-between">
@@ -459,78 +488,94 @@ export default function Groups() {
       </Dialog>
 
       <Dialog open={manageMembersDialogOpen} onOpenChange={setManageMembersDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Manage Group Members</DialogTitle>
             <DialogDescription>
               Add or remove students from {selectedGroup?.name}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            {selectedGroup && selectedGroup.members.length > 0 && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Current Members ({selectedGroup.memberCount})</label>
-                <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {selectedGroup.members.map((member) => (
-                    <div 
-                      className="group flex items-center justify-between gap-2 p-2 border bg-muted rounded-md"
-                    >
-                      <div key={member.authentikUserId} className="flex items-center gap-2 text-sm p-2 rounded-md">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span>{getStudentName(member.authentikUserId)}</span>
-                      </div>
-                      <Button 
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => { removeMembersMutation.mutate({
-                          groupId: selectedGroup.id,
-                          studentIds: [member.authentikUserId],
-                        }); }}
-                        data-testid={`button-remove-member-${member.authentikUserId}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
+          <div className="py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Current Members ({selectedGroup?.memberCount ?? 0})</label>
+                <div className="mt-2 border rounded-md p-2 max-h-[36rem] overflow-y-auto">
+                  {selectedGroup && selectedGroup.members.length > 0 ? (
+                    <div className="space-y-2">
+                      {selectedGroup.members.sort((a, b) => getStudentName(a.authentikUserId).localeCompare(getStudentName(b.authentikUserId))).map((member) => (
+                        <div key={member.authentikUserId} className="group flex items-center justify-between gap-2 p-2 border bg-muted rounded-md">
+                          <div className="flex items-center gap-2 text-sm p-2 rounded-md">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <span>{getStudentName(member.authentikUserId)}</span>
+                          </div>
+                          <Button 
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => { removeMembersMutation.mutate({
+                              groupId: selectedGroup.id,
+                              studentIds: [member.authentikUserId],
+                            }); }}
+                            data-testid={`button-remove-member-${member.authentikUserId}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">No members</p>
+                  )}
                 </div>
               </div>
-            )}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Add Students</label>
-              <div className="space-y-2 max-h-64 overflow-y-auto border rounded-md p-2">
-                {availableStudents.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    All students are already in this group
-                  </p>
-                ) : (
-                  availableStudents.map((student) => (
-                    <label
-                      key={student.pk}
-                      className="flex items-center gap-3 p-2 rounded-md hover-elevate cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedStudents.includes(String(student.pk))}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedStudents([...selectedStudents, String(student.pk)]);
-                          } else {
-                            setSelectedStudents(selectedStudents.filter(id => id !== String(student.pk)));
-                          }
-                        }}
-                        className="h-4 w-4"
-                      />
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={student.avatar} alt={student.name} />
-                        <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                          {getInitials(student.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{student.name}</span>
-                    </label>
-                  ))
-                )}
+
+              <div>
+                <label className="text-sm font-medium">Add Students</label>
+                <div className="mt-2">
+                  <Input
+                    placeholder="Search students..."
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
+                    className="mb-2"
+                    data-testid="input-student-search"
+                  />
+                </div>
+                <div className="mt-2 border rounded-md p-2 max-h-[36rem] overflow-y-auto">
+                  {filteredAvailableStudents.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      {studentSearch ? "No students match your search" : "All students are already in this group"}
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredAvailableStudents.map((student) => (
+                        <label
+                          key={student.pk}
+                          className="flex items-center gap-3 p-2 rounded-md hover-elevate cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedStudents.includes(String(student.pk))}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedStudents([...selectedStudents, String(student.pk)]);
+                              } else {
+                                setSelectedStudents(selectedStudents.filter(id => id !== String(student.pk)));
+                              }
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={student.avatar} alt={student.name} />
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                              {getInitials(student.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm">{student.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
