@@ -145,10 +145,10 @@ export interface AuthentikPaginatedResponse<T> {
 
 // Lesson block time definitions
 export const LESSON_BLOCKS = [
-  { number: 0, start: "08:00", end: "09:30", label: "Block 1" },
-  { number: 1, start: "09:45", end: "11:15", label: "Block 2" },
-  { number: 2, start: "11:30", end: "13:00", label: "Block 3" },
-  { number: 3, start: "13:15", end: "14:45", label: "Block 4" },
+  { number: 0, start: "08:00", end: "09:40", label: "Block 1" },
+  { number: 1, start: "10:05", end: "11:35", label: "Block 2" },
+  { number: 2, start: "11:50", end: "13:20", label: "Block 3" },
+  { number: 3, start: "14:15", end: "15:45", label: "Block 4" },
 ] as const;
 
 export const DAYS_OF_WEEK = [
@@ -163,5 +163,6 @@ export const DAYS_OF_WEEK = [
 export function getGroupNameForSlot(dayOfWeek: number, blockNumber: number): string {
   const day = DAYS_OF_WEEK.find(d => d.number === dayOfWeek)?.label || "Unknown";
   const block = LESSON_BLOCKS.find(b => b.number === blockNumber)?.label || "Unknown";
-  return `Lesson-${day}-${block}`;
+  //return `Lesson-${day}-${block}`;
+  return "Hausmeistersteuerung Temp"; // Temporary hardcoded group name for testing
 }
