@@ -18,6 +18,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
 } from "@/components/ui/sidebar";
+import LoginButton from './login-button';
 
 const menuItems = [
   {
@@ -60,6 +61,9 @@ export function AppSidebar() {
           <div>
             <h2 className="text-lg font-bold text-sidebar-foreground">SchoolSync</h2>
             <p className="text-xs text-muted-foreground">Access Management</p>
+          </div>
+          <div className="ml-auto">
+            <LoginButton />
           </div>
         </div>
       </SidebarHeader>

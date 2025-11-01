@@ -1,8 +1,12 @@
 import 'dotenv/config';
-import express, { type Request, Response, NextFunction } from "express";
+import express, { type Request, Response, NextFunction, type RequestHandler } from "express";
+import session from 'express-session';
+import connectPgSimple from 'connect-pg-simple';
+import { pool } from './db';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { startSyncService } from "./sync-service";
+import authRouter from './auth';
 
 const app = express();
 
@@ -17,6 +21,59 @@ app.use(express.json({
   }
 }));
 app.use(express.urlencoded({ extended: false }));
+
+// Session store and middleware (must be before auth guard)
+const PgSession = connectPgSimple(session as any);
+
+// allow opting into trust-proxy via env (when deployed behind a proxy/loadbalancer)
+if (process.env.TRUST_PROXY === 'true') {
+  app.set('trust proxy', 1);
+}
+
+const cookieSecure = process.env.COOKIE_SECURE === 'true';
+const cookieSameSite = process.env.COOKIE_SAMESITE || (cookieSecure ? 'none' : 'lax');
+
+const sessionMiddleware = (session({
+  store: new PgSession({ pool, tableName: 'session' }),
+  secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
+  resave: false,
+  saveUninitialized: false,
+  rolling: true, // refresh expiration on each response
+  cookie: {
+    secure: cookieSecure,
+    httpOnly: true,
+    sameSite: cookieSameSite as any,
+    maxAge: Number(process.env.SESSION_MAX_AGE) || 24 * 60 * 60 * 1000, // 1 day
+  }
+}) as unknown) as RequestHandler;
+
+app.use(sessionMiddleware);
+
+// mount auth routes
+app.use('/auth', authRouter);
+
+// Global auth guard: allow /auth, static files, and health endpoints; otherwise require session
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const path = req.path || '';
+  // allow authentication routes and assets
+  if (path.startsWith('/auth') || path.startsWith('/_') || path.startsWith('/public') || path.startsWith('/static') || path === '/favicon.ico') {
+    return next();
+  }
+
+  // allow health check
+  if (path === '/health' || path === '/ping') return next();
+
+  // if user has session, allow
+  if ((req as any).session && (req as any).session.user) return next();
+
+  // if API request, return 401; otherwise redirect to login
+  if (path.startsWith('/api')) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  // browser routes -> redirect to login
+  return res.redirect('/auth/login');
+});
 
 app.use((req, res, next) => {
   const start = Date.now();

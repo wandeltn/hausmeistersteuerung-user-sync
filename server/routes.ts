@@ -13,6 +13,16 @@ import {
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // simple auth middleware
+  function requireAuth(req: any, res: any, next: any) {
+    if (req.session && req.session.user) return next();
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  app.get('/api/me', (req, res) => {
+    res.json({ user: (req as any).session?.user || null });
+  });
+
   // Dashboard stats
   app.get("/api/dashboard/stats", async (req, res) => {
     try {
