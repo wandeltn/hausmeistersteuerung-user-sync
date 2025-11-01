@@ -9,8 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type ClassGroup, type AuthentikUser, LESSON_BLOCKS, DAYS_OF_WEEK } from "@shared/schema";
-import { Plus, FolderKanban, Users, Trash2, Edit, Calendar } from "lucide-react";
-import { useState } from "react";
+import { Plus, FolderKanban, Users, Trash2, Edit, Calendar, X, RemoveFormatting } from "lucide-react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -63,6 +63,14 @@ export default function Groups() {
   const { data: students } = useQuery<AuthentikUser[]>({
     queryKey: ["/api/students"],
   });
+
+  // Keep the selectedGroup in sync with the latest groups data so dialogs reflect
+  // changes immediately (for example when members are removed by mutation).
+  useEffect(() => {
+    if (!selectedGroup || !groups) return;
+    const updated = groups.find((g) => g.id === selectedGroup.id) as ClassGroupWithMembers | undefined;
+    if (updated) setSelectedGroup(updated);
+  }, [groups, selectedGroup?.id]);
 
   const createMutation = useMutation({
     mutationFn: async (data: { name: string; description?: string }) => {
@@ -151,6 +159,31 @@ export default function Groups() {
       toast({
         title: "Error",
         description: "Failed to add members. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const removeMembersMutation = useMutation({
+    mutationFn: async ({ groupId, studentIds }: { groupId: string; studentIds: string[] }) => {
+      for (const id of studentIds) {
+        console.log(`Removing user ${id} from group ${groupId}`);
+        await apiRequest("DELETE", `/api/groups/${groupId}/members/${id}`);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      toast({
+        title: "Members removed",
+        description: "Students have been removed from the class group.",
+      });
+      // Keep the dialog open; selectedGroup will be updated from the refreshed query
+      setSelectedStudents([]);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to remove members. Please try again.",
         variant: "destructive",
       });
     },
@@ -439,9 +472,25 @@ export default function Groups() {
                 <label className="text-sm font-medium">Current Members ({selectedGroup.memberCount})</label>
                 <div className="space-y-2 max-h-32 overflow-y-auto">
                   {selectedGroup.members.map((member) => (
-                    <div key={member.authentikUserId} className="flex items-center gap-2 text-sm p-2 bg-muted rounded-md">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>{getStudentName(member.authentikUserId)}</span>
+                    <div 
+                      className="group flex items-center justify-between gap-2 p-2 border bg-muted rounded-md"
+                    >
+                      <div key={member.authentikUserId} className="flex items-center gap-2 text-sm p-2 rounded-md">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span>{getStudentName(member.authentikUserId)}</span>
+                      </div>
+                      <Button 
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => { removeMembersMutation.mutate({
+                          groupId: selectedGroup.id,
+                          studentIds: [member.authentikUserId],
+                        }); }}
+                        data-testid={`button-remove-member-${member.authentikUserId}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
                     </div>
                   ))}
                 </div>

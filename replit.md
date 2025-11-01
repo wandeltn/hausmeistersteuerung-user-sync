@@ -74,6 +74,9 @@ Required secrets (configured in Replit Secrets):
 - `AUTHENTIK_API_TOKEN`: Authentik API bearer token with user/group management permissions
 - `DATABASE_URL`: PostgreSQL connection string (auto-configured by Replit)
 
+OAuth Config
+- `
+
 ## User Workflows
 
 ### Creating a Class Group and Assigning to Schedule

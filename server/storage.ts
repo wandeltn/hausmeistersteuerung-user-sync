@@ -111,10 +111,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async removeGroupMember(id: string, groupId: string): Promise<void> {
+  async removeGroupMember(UserId: string, groupId: string): Promise<void> {
+    console.log(`Removing user ${UserId} from group ${groupId} in storage layer`);
     await db.delete(classGroupMembers).where(
       and(
-        eq(classGroupMembers.id, id),
+        eq(classGroupMembers.authentikUserId, UserId),
         eq(classGroupMembers.classGroupId, groupId)
       )
     );

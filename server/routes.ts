@@ -204,15 +204,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Remove group member
-  app.delete("/api/groups/:groupId/members/:userId", async (req, res) => {
+  app.delete("/api/groups/:groupId/members", async (req, res) => {
     try {
-      const { groupId, userId } = req.params;
-      await storage.removeGroupMember(groupId, userId);
+      const { groupId } = req.params;
+      const { userIds } = req.body.studentIds ? { userIds: req.body.studentIds } : req.body;
+      console.log(`Received request to remove users from group ${groupId}:`, userIds);
+      for (const id of userIds) {
+        if (typeof id !== 'string') {
+          return res.status(400).json({ error: "userIds must be an array of strings" });
+        }
+        console.log(`Removing user ${id} from group ${groupId}`);
+        await storage.removeGroupMember(id, groupId);
+      }
       res.json({ success: true });
     } catch (error) {
       console.error("Error removing group member:", error);
       res.status(500).json({ error: "Failed to remove group member" });
     }
+  });
+
+  app.delete("/api/groups/:groupId/members/:userId", async (req, res) => {
+    try {
+      const { groupId, userId } = req.params;
+      console.log(`Removing user ${userId} from group ${groupId}`);
+      await storage.removeGroupMember(userId, groupId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing group member:", error);
+      res.status(500).json({ error: "Failed to remove group member" });
+    } 
   });
 
   // User Exclusions
