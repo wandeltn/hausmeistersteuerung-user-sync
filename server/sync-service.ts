@@ -13,12 +13,6 @@ async function syncAccessForCurrentTime() {
     
     // Convert to our 0-4 day system (Monday=0, Friday=4)
     const adjustedDay = currentDay === 0 ? -1 : currentDay === 6 ? -1 : currentDay - 1;
-    
-    // Skip if it's weekend
-    if (adjustedDay < 0 || adjustedDay > 4) {
-      console.log("Weekend - no sync needed");
-      return;
-    }
 
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();

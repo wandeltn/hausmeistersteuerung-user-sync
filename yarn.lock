@@ -600,6 +600,11 @@
   resolved "https://registry.yarnpkg.com/@floating-ui/utils/-/utils-0.2.10.tgz#a2a1e3812d14525f725d011a73eceb41fef5bc1c"
   integrity sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==
 
+"@goauthentik/api@^2025.6.3-1751754396":
+  version "2025.6.3-1751754396"
+  resolved "https://registry.yarnpkg.com/@goauthentik/api/-/api-2025.6.3-1751754396.tgz#d01f1d10ae210ad777aedc26de299cd7bad2f133"
+  integrity sha512-JL7V1OTRIYJYzWvqoo2TNEQZirFHHkUt2tludO82luVEPDZwWQ8NwvwcFvO74v/SDSqg9VGN6H9BDoUrPD6KHQ==
+
 "@hookform/resolvers@^3.10.0":
   version "3.10.0"
   resolved "https://registry.yarnpkg.com/@hookform/resolvers/-/resolvers-3.10.0.tgz#7bfd18113daca4e57e27e1205b7d5a2d371aa59a"

@@ -12,7 +12,6 @@ export default function LoginButton() {
 
   return (
     <div>
-      <button onClick={handleLogin} className="btn">Login</button>
       <button onClick={handleLogout} className="btn">Logout</button>
     </div>
   );

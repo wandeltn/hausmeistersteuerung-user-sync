@@ -95,7 +95,7 @@ export default function Schedule() {
   };
 
   return (
-    <div className="space-y-6" data-testid="page-schedule">
+    <div className="space-y-7" data-testid="page-schedule">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Weekly Schedule</h1>
         <p className="text-muted-foreground mt-1">
@@ -107,20 +107,20 @@ export default function Schedule() {
         <CardHeader>
           <CardTitle>Schedule Grid</CardTitle>
           <CardDescription>
-            Monday through Friday, 4 lesson blocks per day (8:00 AM - 2:45 PM)
+            Monday through Friday, 5 lesson blocks per day (8:00 AM - 3:45 PM)
           </CardDescription>
         </CardHeader>
         <CardContent>
           {scheduleLoading ? (
             <div className="space-y-4">
-              {[...Array(4)].map((_, i) => (
+              {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-32 w-full" />
               ))}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <div className="min-w-max">
-                <div className="grid grid-cols-6 gap-2 mb-2">
+                <div className="grid grid-cols-7 gap-2 mb-2">
                   <div className="font-medium text-sm text-muted-foreground p-2">Time</div>
                   {DAYS_OF_WEEK.map((day) => (
                     <div key={day.number} className="font-medium text-sm text-center p-2">
@@ -131,7 +131,7 @@ export default function Schedule() {
 
                 <div className="space-y-2">
                   {LESSON_BLOCKS.map((block) => (
-                    <div key={block.number} className="grid grid-cols-6 gap-2">
+                    <div key={block.number} className="grid grid-cols-7 gap-2">
                       <div className="flex flex-col justify-center p-3 bg-muted rounded-md">
                         <div className="text-sm font-medium text-foreground">{block.label}</div>
                         <div className="text-xs text-muted-foreground">

@@ -36,15 +36,31 @@ export async function setupVite(app: Express, server: Server) {
     allowedHosts: true as const,
   };
 
+  const clientRoot = path.resolve(import.meta.dirname, '..', 'client');
+
+  // Try to load the React plugin so TSX files are supported in dev middleware.
+  let reactPlugin: any = undefined;
+  try {
+    const mod = await import('@vitejs/plugin-react');
+    reactPlugin = mod && (mod.default || mod);
+  } catch (e) {
+    console.warn('[vite debug] could not import @vitejs/plugin-react, TSX transforms may fail', e);
+  }
+
   const vite = await createViteServer({
-    // minimal config for middleware mode — avoid loading the project's
-    // dev-only plugins here.
+    root: clientRoot,
     configFile: false,
+    resolve: {
+      alias: [
+        { find: /^@\//, replacement: path.resolve(clientRoot, 'src') + '/' },
+        { find: '@shared', replacement: path.resolve(import.meta.dirname, '..', 'shared') },
+      ],
+    },
+    plugins: reactPlugin ? [reactPlugin()] : [],
     customLogger: {
       ...viteLogger,
       error: (msg, options) => {
         viteLogger.error(msg, options);
-        process.exit(1);
       },
     },
     server: serverOptions,
@@ -52,6 +68,10 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
+
+  // NOTE: we intentionally avoid calling `ssrLoadModule` here because it
+  // will evaluate client-side code (which accesses `document`) and throw
+  // during SSR. We only verify file existence above.
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 

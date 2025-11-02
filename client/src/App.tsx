@@ -13,6 +13,7 @@ import Students from "@/pages/students";
 import Groups from "@/pages/groups";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
+import Login from "./pages/login";
 
 function Router() {
   return (

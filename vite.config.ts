@@ -20,6 +20,7 @@ export default defineConfig({
       : []),
   ],
   resolve: {
+    extensions: [".mjs", ".js", ".ts", ".jsx", ".tsx", ".json"],
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
       "@shared": path.resolve(import.meta.dirname, "shared"),

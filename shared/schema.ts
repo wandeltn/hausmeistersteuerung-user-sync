@@ -149,6 +149,7 @@ export const LESSON_BLOCKS = [
   { number: 1, start: "10:05", end: "11:35", label: "Block 2" },
   { number: 2, start: "11:50", end: "13:20", label: "Block 3" },
   { number: 3, start: "14:15", end: "15:45", label: "Block 4" },
+  { number: -1, start: "00:00", end: "23:59", label: "Anytime" },
 ] as const;
 
 export const DAYS_OF_WEEK = [
@@ -157,6 +158,7 @@ export const DAYS_OF_WEEK = [
   { number: 2, label: "Wednesday", short: "Wed" },
   { number: 3, label: "Thursday", short: "Thu" },
   { number: 4, label: "Friday", short: "Fri" },
+  { number: -1, label: "Always", short: "Any" },
 ] as const;
 
 // Helper to get Authentik group name for a time slot
