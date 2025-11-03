@@ -20,7 +20,7 @@ WORKDIR /usr/src/app
 RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=bind,source=yarn.lock,target=yarn.lock \
     --mount=type=cache,target=/root/.yarn \
-    yarn install --production --frozen-lockfile
+    yarn install --production --frozen-lockfile --network-timeout 600000
 
 ################################################################################
 # Stage: build the application. Use a glibc-based image (bullseye) to ensure
@@ -31,7 +31,7 @@ WORKDIR /usr/src/app
 RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=bind,source=yarn.lock,target=yarn.lock \
     --mount=type=cache,target=/root/.yarn \
-    yarn install --frozen-lockfile
+    yarn install --frozen-lockfile --network-timeout 600000
 
 # Copy source and run build
 COPY . .
