@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { authentikClient } from "./authentik-client";
+import { fullSync } from "./sync-service";
 import {
   insertClassGroupSchema,
   insertUserExclusionSchema,
@@ -120,6 +121,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching sync status:", error);
       res.status(500).json({ error: "Failed to fetch sync status" });
+    }
+  });
+
+  // Trigger a full sync on-demand
+  app.post("/api/sync/full", requireAuth, async (req, res) => {
+    try {
+      // Start full sync asynchronously but acknowledge the request immediately
+      fullSync()
+        .then(() => console.log("Manual full sync completed"))
+        .catch((e) => console.error("Manual full sync failed:", e));
+      res.json({ success: true, message: "Full sync started" });
+    } catch (error) {
+      console.error("Error starting full sync:", error);
+      res.status(500).json({ error: "Failed to start full sync" });
     }
   });
 

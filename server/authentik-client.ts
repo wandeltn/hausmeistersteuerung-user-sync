@@ -149,6 +149,32 @@ class AuthentikClient {
       return null;
     }
   }
+  
+  /**
+   * Return an array of user PKs (as strings) that belong to the named group.
+   * Uses the generated client to fetch group details with users included.
+   */
+  async getGroupMembers(groupName: string): Promise<string[]> {
+    try {
+      // Find group first (to get pk/uuid)
+      const resp = await this.api.coreGroupsList({ name: groupName });
+      const pag = resp as unknown as GenPaginatedGroupList;
+      const groups = (pag.results || []) as GenGroup[];
+      const g = groups.find((x) => x.name === groupName);
+      if (!g) return [];
+
+      const groupUuid = g.pk;
+      const full = await this.api.coreGroupsRetrieve({ groupUuid, includeUsers: true });
+      const gf = full as GenGroup;
+      // Prefer numeric array if present, else map usersObj
+      const nums: number[] = (gf.users && gf.users.length) ? gf.users : (gf.usersObj && gf.usersObj.map((u: any) => u.pk)) || [];
+      return nums.map((n) => String(n));
+    } catch (err) {
+      const e = await this.normalizeError(err);
+      console.error(`Failed to fetch members for group ${groupName}:`, e);
+      return [];
+    }
+  }
 
   async createGroup(name: string): Promise<AuthentikGroup | null> {
     try {
