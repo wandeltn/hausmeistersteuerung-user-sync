@@ -46,6 +46,7 @@ function App() {
                 <div className="flex items-center gap-3">
                   <SyncStatus />
                   <ThemeToggle />
+                  <span className="text-sm text-muted-foreground ml-2" title="Application version">v0.1.2</span>
                 </div>
               </header>
               <main className="flex-1 overflow-auto p-6 bg-background">
